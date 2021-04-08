@@ -506,6 +506,16 @@
       </tags>
   </entry>
   <entry>
+    <title>查看apk签名信息</title>
+    <url>/2020/08/03/%E6%9F%A5%E7%9C%8Bapk%E7%AD%BE%E5%90%8D%E4%BF%A1%E6%81%AF/</url>
+    <content><![CDATA[<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">keytool -printcert -jarfile sample.apk</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>Android小技巧</category>
+      </categories>
+  </entry>
+  <entry>
     <title>用 Golang 在 Android 上实现代理的几个问题</title>
     <url>/2020/04/23/%E7%94%A8-Golang-%E5%9C%A8-Android-%E4%B8%8A%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%90%86%E7%9A%84%E5%87%A0%E4%B8%AA%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<blockquote>
@@ -544,16 +554,6 @@
         <tag>Android</tag>
         <tag>编程中的问题</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>查看apk签名信息</title>
-    <url>/2020/08/03/%E6%9F%A5%E7%9C%8Bapk%E7%AD%BE%E5%90%8D%E4%BF%A1%E6%81%AF/</url>
-    <content><![CDATA[<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">keytool -printcert -jarfile sample.apk</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>Android小技巧</category>
-      </categories>
   </entry>
   <entry>
     <title>解决Android Studio missing essential plugin org.jetbrains.android</title>
