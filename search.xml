@@ -97,7 +97,7 @@
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>以下是在使用<code>python</code>开发<code>frida</code>脚本过程中收集到的一些用法, 这里将学习的知识点做个归纳总结</p>
 <h2 id="Hook-Java方法"><a href="#Hook-Java方法" class="headerlink" title="Hook Java方法"></a>Hook Java方法</h2><p>hook Java 函数只区分两种情况:无重载函数/有重载函数,下面介绍针对不同的情况具体hook方法</p>
 <h3 id="无重载函数"><a href="#无重载函数" class="headerlink" title="无重载函数"></a>无重载函数</h3><figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> Context = Java.use(<span class="string">&#x27;android.content.Context&#x27;</span>);</span><br><span class="line">Context.checkCallingOrSelfPermission.implementation = <span class="function"><span class="keyword">function</span> (<span class="params">permission: <span class="built_in">string</span></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">this</span>.checkCallingOrSelfPermission(permission);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<span id="more"></span>
 <p>如果没有同名的重载函数则直接调用函数的<code>implementation</code>来重写即可</p>
 <h3 id="多个重载函数"><a href="#多个重载函数" class="headerlink" title="多个重载函数"></a>多个重载函数</h3><figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> Context = Java.use(<span class="string">&#x27;android.content.Context&#x27;</span>);</span><br><span class="line">Context.checkPermission.overload(<span class="string">&#x27;java.lang.String&#x27;</span>, <span class="string">&#x27;int&#x27;</span>, <span class="string">&#x27;int&#x27;</span>).implementation = <span class="function"><span class="keyword">function</span> (<span class="params">permission: <span class="built_in">string</span>, pid: <span class="built_in">number</span>, uid: <span class="built_in">number</span></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">this</span>.checkPermission(permission, pid, uid);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -244,6 +244,7 @@
       <tags>
         <tag>Android</tag>
         <tag>编程中的问题</tag>
+        <tag>移动安全</tag>
         <tag>Xposed</tag>
       </tags>
   </entry>
@@ -421,6 +422,7 @@
       </categories>
       <tags>
         <tag>Android</tag>
+        <tag>移动安全</tag>
         <tag>Xposed</tag>
       </tags>
   </entry>
@@ -504,16 +506,6 @@
       </tags>
   </entry>
   <entry>
-    <title>查看apk签名信息</title>
-    <url>/2020/08/03/%E6%9F%A5%E7%9C%8Bapk%E7%AD%BE%E5%90%8D%E4%BF%A1%E6%81%AF/</url>
-    <content><![CDATA[<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">keytool -printcert -jarfile sample.apk</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>Android小技巧</category>
-      </categories>
-  </entry>
-  <entry>
     <title>用 Golang 在 Android 上实现代理的几个问题</title>
     <url>/2020/04/23/%E7%94%A8-Golang-%E5%9C%A8-Android-%E4%B8%8A%E5%AE%9E%E7%8E%B0%E4%BB%A3%E7%90%86%E7%9A%84%E5%87%A0%E4%B8%AA%E9%97%AE%E9%A2%98/</url>
     <content><![CDATA[<blockquote>
@@ -552,6 +544,16 @@
         <tag>Android</tag>
         <tag>编程中的问题</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>查看apk签名信息</title>
+    <url>/2020/08/03/%E6%9F%A5%E7%9C%8Bapk%E7%AD%BE%E5%90%8D%E4%BF%A1%E6%81%AF/</url>
+    <content><![CDATA[<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">keytool -printcert -jarfile sample.apk</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>Android小技巧</category>
+      </categories>
   </entry>
   <entry>
     <title>解决Android Studio missing essential plugin org.jetbrains.android</title>
