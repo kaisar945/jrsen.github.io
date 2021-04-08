@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+
+
+<html lang="zh-Hans">
+
+
+<head>
+  <meta charset="utf-8" />
+   
+  <meta name="keywords" content="Kaisar,Android,Android developer,Android hacker,Kaisar youtuber" />
+   
+  <meta name="description" content="Kaisar Android developer blog" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    Frida开发手册 |  狂人日记
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/images/favicon.png" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+  
+  
+
+  
+
+</head>
+
+</html>
+
+<body>
+  <div id="app">
+    
+      
+    <main class="content on">
+      <section class="outer">
+  <article
+  id="post-Frida开发手册"
+  class="article article-type-post"
+  itemscope
+  itemprop="blogPost"
+  data-scroll-reveal
+>
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  Frida开发手册
+</h1>
+ 
+
+    </header>
+     
+    <div class="article-meta">
+      <a href="/2021/04/08/Frida%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C/" class="article-date">
+  <time datetime="2021-04-08T06:14:14.000Z" itemprop="datePublished">2021-04-08</time>
+</a> 
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Android%E5%BC%80%E5%8F%91%E5%AE%9E%E6%88%98/">Android开发实战</a>
+  </div>
+  
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">1.2k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">6 min</span>
+        </span>
+    </span>
+</div>
+ 
+    </div>
+      
+    <div class="tocbot"></div>
+
+
+
+
+  
+    <div class="article-entry" itemprop="articleBody">
+       
+  <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>以下是在使用<code>python</code>开发<code>frida</code>脚本过程中收集到的一些用法, 这里将学习的知识点做个归纳总结</p>
+<h2 id="Hook-Java方法"><a href="#Hook-Java方法" class="headerlink" title="Hook Java方法"></a>Hook Java方法</h2><p>hook Java 函数只区分两种情况:无重载函数/有重载函数,下面介绍针对不同的情况具体hook方法</p>
+<h3 id="无重载函数"><a href="#无重载函数" class="headerlink" title="无重载函数"></a>无重载函数</h3><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Context = Java.use(<span class="string">&#x27;android.content.Context&#x27;</span>);</span><br><span class="line">Context.checkCallingOrSelfPermission.implementation = <span class="function"><span class="keyword">function</span> (<span class="params">permission: <span class="built_in">string</span></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">this</span>.checkCallingOrSelfPermission(permission);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果没有同名的重载函数则直接调用函数的<code>implementation</code>来重写即可</p>
+<h3 id="多个重载函数"><a href="#多个重载函数" class="headerlink" title="多个重载函数"></a>多个重载函数</h3><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Context = Java.use(<span class="string">&#x27;android.content.Context&#x27;</span>);</span><br><span class="line">Context.checkPermission.overload(<span class="string">&#x27;java.lang.String&#x27;</span>, <span class="string">&#x27;int&#x27;</span>, <span class="string">&#x27;int&#x27;</span>).implementation = <span class="function"><span class="keyword">function</span> (<span class="params">permission: <span class="built_in">string</span>, pid: <span class="built_in">number</span>, uid: <span class="built_in">number</span></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">this</span>.checkPermission(permission, pid, uid);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果需要 hook特定的重载函数则必须要在函数名后通过<code>overload</code>函数来指定参数列表</p>
+<h3 id="调用原始函数"><a href="#调用原始函数" class="headerlink" title="调用原始函数"></a>调用原始函数</h3><p>常规写法</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Context = Java.use(<span class="string">&#x27;android.content.Context&#x27;</span>);</span><br><span class="line">Context.checkCallingOrSelfPermission.implementation = <span class="function"><span class="keyword">function</span> (<span class="params">permission: <span class="built_in">string</span></span>) </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="built_in">this</span>.checkCallingOrSelfPermission(permission);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>反射式写法</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Context = Java.use(<span class="string">&#x27;android.content.Context&#x27;</span>);</span><br><span class="line"><span class="keyword">const</span> checkCallingOrSelfPermission = Context.checkCallingOrSelfPermission;</span><br><span class="line">checkCallingOrSelfPermission.implementation = <span class="function"><span class="keyword">function</span> (<span class="params">permission: <span class="built_in">string</span></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> checkCallingOrSelfPermission.call(<span class="built_in">this</span>, permission);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>推荐第一种写法比较方便</p>
+<h2 id="遍历Java-数组-集合"><a href="#遍历Java-数组-集合" class="headerlink" title="遍历Java 数组/集合"></a>遍历Java 数组/集合</h2><p>数组</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> buffer = Java.array(<span class="string">&#x27;byte&#x27;</span>, [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);</span><br><span class="line"><span class="built_in">console</span>.log(buffer.length);</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; buffer.length; ++i)&#123;</span><br><span class="line">    <span class="keyword">let</span> b = buffer[i];</span><br><span class="line">    <span class="comment">//todo something</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">console</span>.log(result);</span><br></pre></td></tr></table></figure>
+
+<p>集合</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> ArrayList = Java.use(<span class="string">&#x27;java.util.ArrayList&#x27;</span>);</span><br><span class="line"><span class="keyword">let</span> list = ArrayList.$new();</span><br><span class="line"><span class="keyword">let</span> iter = list.iterator();</span><br><span class="line"><span class="keyword">while</span>(iter.hasNext()) &#123;</span><br><span class="line">    <span class="keyword">let</span> item = iter.next();</span><br><span class="line">	<span class="comment">//todo something</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建Java数组"><a href="#创建Java数组" class="headerlink" title="创建Java数组"></a>创建Java数组</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> buffer = Java.array(<span class="string">&#x27;byte&#x27;</span>, [ <span class="number">13</span>, <span class="number">37</span>, <span class="number">42</span> ]);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Java异常处理"><a href="#Java异常处理" class="headerlink" title="Java异常处理"></a>Java异常处理</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> testExceptions = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> ThrowingExceptionClass = Java.use(<span class="string">&quot;com.blog.testfrida.exceptions.ThrowingExceptionClass&quot;</span>);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        ThrowingExceptionClass.callException();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (ex) &#123;</span><br><span class="line">        <span class="comment">//ex is a handle, you have to cast it.</span></span><br><span class="line">        <span class="keyword">var</span> Exception = Java.use(<span class="string">&quot;java.lang.Trowable&quot;</span>);</span><br><span class="line">        <span class="keyword">var</span> item = Java.cast(ex,Exception);</span><br><span class="line">        <span class="keyword">var</span> SpecificException = Java.use(item.$className);</span><br><span class="line">        item = Java.cast(ex,SpecificException);</span><br><span class="line">        <span class="built_in">console</span>.log(item.attribute.value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="抛出Java异常"><a href="#抛出Java异常" class="headerlink" title="抛出Java异常"></a>抛出Java异常</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Activity = Java.use(<span class="string">&#x27;android.app.Activity&#x27;</span>);</span><br><span class="line"><span class="keyword">const</span> Exception = Java.use(<span class="string">&#x27;java.lang.Exception&#x27;</span>);</span><br><span class="line">Activity.onResume.implementation = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">throw</span> Exception.$new(<span class="string">&#x27;Oh noes!&#x27;</span>);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="调用static方法-非static方法"><a href="#调用static方法-非static方法" class="headerlink" title="调用static方法/非static方法"></a>调用static方法/非static方法</h2><p>调用static方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> EncryptUtil = Java.use(<span class="string">&quot;xxx.utils.EncryptUtil&quot;</span>);</span><br><span class="line"><span class="keyword">var</span> encryptHMAC = EncryptUtil.encryptHMAC.overload(<span class="string">&#x27;java.lang.String&#x27;</span>, <span class="string">&#x27;java.lang.String&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> new_signature = encryptHMAC.call(EncryptUtil,msg_body, tran_id);</span><br></pre></td></tr></table></figure>
+
+<p>调用非static方法</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> EncryptUtil = Java.use(<span class="string">&quot;xxx.utils.EncryptUtil&quot;</span>);</span><br><span class="line"><span class="keyword">var</span> encryptHMAC = EncryptUtil.encryptHMAC.overload(<span class="string">&#x27;java.lang.String&#x27;</span>, <span class="string">&#x27;java.lang.String&#x27;</span>);</span><br><span class="line"><span class="keyword">var</span> new_signature = encryptHMAC.call(object,msg_body, tran_id);</span><br></pre></td></tr></table></figure>
+
+<h2 id="获取-修改实例字段值"><a href="#获取-修改实例字段值" class="headerlink" title="获取/修改实例字段值"></a>获取/修改实例字段值</h2><h3 id="常规字段"><a href="#常规字段" class="headerlink" title="常规字段"></a>常规字段</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Class Example &#123;</span><br><span class="line">	<span class="keyword">double</span> f = <span class="number">200.0d</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意如果要访问或者修改对象的<code>f</code>字段则<strong>不能</strong>直接通过对象<code>.f</code>访问,需要调用<code>.f</code>的<code>value</code>属性</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Example = Java.use(<span class="string">&#x27;com.kaisar.Example&#x27;</span>);</span><br><span class="line"><span class="keyword">let</span> example = Example.$new();</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">`before=<span class="subst">$&#123;example.f.value&#125;</span>`</span>);</span><br><span class="line">example.f.value = <span class="number">100</span>;</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">`after=<span class="subst">$&#123;example.f.value&#125;</span>`</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="具有同名函数的字段"><a href="#具有同名函数的字段" class="headerlink" title="具有同名函数的字段"></a>具有同名函数的字段</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Class Example &#123;</span><br><span class="line">	<span class="keyword">double</span> f = <span class="number">200.0d</span>;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">f</span><span class="params">()</span> </span>&#123;...&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>访问规则和<strong>常规字段</strong>基本一致但还是有一点区别,如果出现同名的函数会导致<code>frida</code>无法区分是要访问字段还是函数遇到这种情况需要使用<code>_</code>加以区分</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Example = Java.use(<span class="string">&#x27;com.kaisar.Example&#x27;</span>);</span><br><span class="line"><span class="keyword">let</span> example = Example.$new();</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">`before=<span class="subst">$&#123;example._f.value&#125;</span>`</span>);</span><br><span class="line">example.f.value = <span class="number">100</span>;</span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">`after=<span class="subst">$&#123;example._f.value&#125;</span>`</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Hook不生效"><a href="#Hook不生效" class="headerlink" title="Hook不生效"></a>Hook不生效</h2><p>尝试禁止优化</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Java.deoptimizeEverything();</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>相关信息:<a target="_blank" rel="noopener" href="https://github.com/frida/frida/issues/1395">https://github.com/frida/frida/issues/1395</a></p>
+</blockquote>
+<h2 id="无法调用Java对象函数"><a href="#无法调用Java对象函数" class="headerlink" title="无法调用Java对象函数"></a>无法调用Java对象函数</h2><p>排查问题步骤</p>
+<ol>
+<li><p>先确认<code>JS</code>的映射对象是否存在这个函数</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Object</span>.keys(obj).forEach(<span class="function"><span class="params">key</span> =&gt;</span> <span class="built_in">console</span>.log(key));</span><br></pre></td></tr></table></figure>
+
+<p>或</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">let</span> key <span class="keyword">in</span> obj) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>或</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Object</span>.getOwnPropertyNames(obj.__proto__).join(<span class="string">&#x27;\n\t&#x27;</span>)</span><br></pre></td></tr></table></figure></li>
+<li><p>如果存在映射函数名则换种写法就可以了<br>例如:</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Enumeration = Java.use(<span class="string">&#x27;java.util.Enumeration&#x27;</span>);</span><br><span class="line">Enumeration.nextElement.call(networkInterfaces);</span><br></pre></td></tr></table></figure></li>
+<li><p>如果不存在则可能自动转型了使用<code>Java.cast</code>函数转成目标对象类型</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> networkInterfaces = ...</span><br><span class="line"><span class="keyword">const</span> NetworkInterface = Java.use(<span class="string">&#x27;java.net.NetworkInterface&#x27;</span>);</span><br><span class="line">networkInterfaces = Java.cast(networkInterfaces, NetworkInterface);</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="实现继承类"><a href="#实现继承类" class="headerlink" title="实现继承类"></a>实现继承类</h2><p>两种方式推荐第一种更符合书写方式</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> SomeBaseClass = Java.use(<span class="string">&#x27;com.example.SomeBaseClass&#x27;</span>);</span><br><span class="line"><span class="keyword">const</span> X509TrustManager = Java.use(<span class="string">&#x27;javax.net.ssl.X509TrustManager&#x27;</span>);</span><br><span class="line"><span class="keyword">const</span> MyTrustManager = Java.registerClass(&#123;</span><br><span class="line">    name: <span class="string">&#x27;com.example.MyTrustManager&#x27;</span>,</span><br><span class="line">    implements: [X509TrustManager],</span><br><span class="line">    methods: &#123;</span><br><span class="line">        <span class="function"><span class="title">checkClientTrusted</span>(<span class="params">chain, authType</span>)</span> &#123;</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="function"><span class="title">checkServerTrusted</span>(<span class="params">chain, authType</span>)</span> &#123;</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="function"><span class="title">getAcceptedIssuers</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> [];</span><br><span class="line">        &#125;,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> MyWeirdTrustManager = Java.registerClass(&#123;</span><br><span class="line">    name: <span class="string">&#x27;com.example.MyWeirdTrustManager&#x27;</span>,</span><br><span class="line">    superClass: SomeBaseClass,</span><br><span class="line">    implements: [X509TrustManager],</span><br><span class="line">    fields: &#123;</span><br><span class="line">        description: <span class="string">&#x27;java.lang.String&#x27;</span>,</span><br><span class="line">        limit: <span class="string">&#x27;int&#x27;</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    methods: &#123;</span><br><span class="line">        $init() &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Constructor called&#x27;</span>);</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="function"><span class="title">checkClientTrusted</span>(<span class="params">chain, authType</span>)</span> &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;checkClientTrusted&#x27;</span>);</span><br><span class="line">        &#125;,</span><br><span class="line">        checkServerTrusted: [&#123;</span><br><span class="line">            returnType: <span class="string">&#x27;void&#x27;</span>,</span><br><span class="line">            argumentTypes: [<span class="string">&#x27;[Ljava.security.cert.X509Certificate;&#x27;</span>, <span class="string">&#x27;java.lang.String&#x27;</span>],</span><br><span class="line">            <span class="function"><span class="title">implementation</span>(<span class="params">chain, authType</span>)</span> &#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">&#x27;checkServerTrusted A&#x27;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, &#123;</span><br><span class="line">            returnType: <span class="string">&#x27;java.util.List&#x27;</span>,</span><br><span class="line">            argumentTypes: [<span class="string">&#x27;[Ljava.security.cert.X509Certificate;&#x27;</span>, <span class="string">&#x27;java.lang.String&#x27;</span>, <span class="string">&#x27;java.lang.String&#x27;</span>],</span><br><span class="line">            <span class="function"><span class="title">implementation</span>(<span class="params">chain, authType, host</span>)</span> &#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">&#x27;checkServerTrusted B&#x27;</span>);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;],</span><br><span class="line">        <span class="function"><span class="title">getAcceptedIssuers</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;getAcceptedIssuers&#x27;</span>);</span><br><span class="line">            <span class="keyword">return</span> [];</span><br><span class="line">        &#125;,</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> myOutputClass = Java.registerClass(&#123;</span><br><span class="line">    name: <span class="string">&#x27;com.example.MyOutputStream&#x27;</span>,</span><br><span class="line">    superClass: <span class="string">&quot;java.io.ByteArrayOutputStream&quot;</span>,</span><br><span class="line">    implements: [],</span><br><span class="line">    methods: &#123;</span><br><span class="line">        write: [&#123;</span><br><span class="line">            returnType: <span class="string">&#x27;void&#x27;</span>,</span><br><span class="line">            argumentTypes: [<span class="string">&#x27;[B&#x27;</span>, <span class="string">&#x27;int&#x27;</span>, <span class="string">&#x27;int&#x27;</span>],</span><br><span class="line">            implementation: <span class="function"><span class="keyword">function</span> (<span class="params">b, off, len</span>) </span>&#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">&quot;MyOutputStream.write(&quot;</span> + <span class="built_in">JSON</span>.stringify(b) + <span class="string">&quot;,&quot;</span> + off + <span class="string">&quot;,&quot;</span> + len + <span class="string">&quot;)&quot;</span>);</span><br><span class="line">                <span class="built_in">this</span>.$super.write(b, off, len);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, &#123;</span><br><span class="line">            returnType: <span class="string">&#x27;void&#x27;</span>,</span><br><span class="line">            argumentTypes: [<span class="string">&#x27;int&#x27;</span>],</span><br><span class="line">            implementation: <span class="function"><span class="keyword">function</span> (<span class="params">b</span>) </span>&#123;</span><br><span class="line">                <span class="built_in">console</span>.log(<span class="string">&#x27;MyOutputStream.write(&#x27;</span> + b + <span class="string">&quot;)&quot;</span>);</span><br><span class="line">                <span class="built_in">this</span>.$super.write(b);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">var</span> myInstance = myOutputClass.$new();</span><br></pre></td></tr></table></figure>
+ 
+      <!-- reward -->
+      
+      <div id="reword-out">
+        <div id="reward-btn">
+          Donate
+        </div>
+      </div>
+      
+    </div>
+    
+
+    <!-- copyright -->
+    
+    <div class="declare">
+      <ul class="post-copyright">
+        <li>
+          <i class="ri-copyright-line"></i>
+          <strong>Copyright： </strong>
+          
+          Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+          
+        </li>
+      </ul>
+    </div>
+    
+    <footer class="article-footer">
+       
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://kaisar.kozow.com/2021/04/08/Frida%E5%BC%80%E5%8F%91%E6%89%8B%E5%86%8C/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>  
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Android/" rel="tag">Android</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/" rel="tag">移动安全</a></li></ul>
+
+    </footer>
+  </div>
+
+   
+  <nav class="article-nav">
+    
+    
+      <a href="/2021/03/01/TypeScript%E5%9B%9E%E8%B0%83%E5%87%BD%E6%95%B0this%E6%8C%87%E5%90%91%E9%97%AE%E9%A2%98/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">TypeScript回调函数this指向问题</div>
+      </a>
+    
+  </nav>
+
+   
+<!-- valine评论 -->
+<div id="vcomments-box">
+  <div id="vcomments"></div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js"></script>
+<script>
+  new Valine({
+    el: "#vcomments",
+    app_id: "wzGK4U2ABF7dnC2fpU0rMY4c-9Nh9j0Va",
+    app_key: "xwX7ayGotkpPKwssQO2AeS77",
+    path: window.location.pathname,
+    avatar: "mp",
+    placeholder: "给我的文章加点评论吧~",
+    recordIP: true,
+  });
+  const infoEle = document.querySelector("#vcomments .info");
+  if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+    infoEle.childNodes.forEach(function (item) {
+      item.parentNode.removeChild(item);
+    });
+  }
+</script>
+<style>
+  #vcomments-box {
+    padding: 5px 30px;
+  }
+
+  @media screen and (max-width: 800px) {
+    #vcomments-box {
+      padding: 5px 0px;
+    }
+  }
+
+  #vcomments-box #vcomments {
+    background-color: #fff;
+  }
+
+  .v .vlist .vcard .vh {
+    padding-right: 20px;
+  }
+
+  .v .vlist .vcard {
+    padding-left: 10px;
+  }
+</style>
+
+ 
+   
+     
+</article>
+
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2015-2021
+        <i class="ri-heart-fill heart_icon"></i> Kaisar
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        Powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+        <span class="division">|</span>
+        Theme - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></s>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/avatar.jpg" alt="狂人日记"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags/Android/">Android</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags/%E6%97%85%E8%A1%8C/">旅行</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags/%E6%91%84%E5%BD%B1%E5%89%AA%E8%BE%91/">摄影</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay_qrcode.jpg">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat_qrcode.jpg">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+
+
+<!-- ClickLove -->
+
+<!-- ClickBoom1 -->
+
+<!-- ClickBoom2 -->
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+<!-- CanvasBackground -->
+
+
+    
+  </div>
+</body>
+
+</html>
