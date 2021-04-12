@@ -349,7 +349,7 @@
   <time datetime="2020-12-08T06:53:25.000Z" itemprop="datePublished">2020-12-08</time>
 </a> 
   <div class="article-category">
-    <a class="article-category-link" href="/categories/%E6%88%91%E7%9A%84Linux%E7%94%9F%E6%B4%BB/">我的Linux生活</a>
+    <a class="article-category-link" href="/categories/Linux%E7%9B%B8%E5%85%B3/">Linux相关</a>
   </div>
    
     </div>
@@ -358,14 +358,8 @@
        
   <p>在<code>16.04</code>的版本中<code>nautilus</code>文件管理器有一项快速定位文件的功能非常好用直接在文件夹中打出首字母即可快速定位到文件,但是在<code>18.04</code>以上的版本中默认就取消了这项功能使得我迁移到新版本中非常不适应今天碰巧找到了找回这个功能的办法记录一下:</p>
 <ol>
-<li><p>第一种安装第三方插件</p>
- <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo add-apt-repository ppa:lubomir-brindza/nautilus-typeahead</span><br><span class="line">sudo apt dist-upgrade</span><br><span class="line">nautilus -r</span><br></pre></td></tr></table></figure></li>
-<li><p>第二种调整配置文件</p>
-<p>2.1. 先安装<code>dconf</code></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install dconf-editor</span><br></pre></td></tr></table></figure>
-
-<p>2.2 打开<code>dconf-editor</code>找到<code>org -&gt; gnome -&gt; nautilus -&gt; preferences -&gt; enable-interactive-search </code>打钩即可</p>
-</li>
+<li>第一种安装第三方插件 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo add-apt-repository ppa:lubomir-brindza/nautilus-typeahead</span><br><span class="line">sudo apt dist-upgrade</span><br><span class="line">nautilus -r</span><br></pre></td></tr></table></figure></li>
+<li>第二种调整配置文件<br> 先安装<code>dconf</code>工具 <code>sudo apt install dconf-editor</code><br> 打开<code>dconf-editor</code>找到<code>org -&gt; gnome -&gt; nautilus -&gt; preferences -&gt; enable-interactive-search </code>打钩即可</li>
 </ol>
  
       <!-- reward -->

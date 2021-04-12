@@ -488,18 +488,12 @@
     <url>/2020/12/08/%E6%89%BE%E5%9B%9EUbuntu16.04%E4%B8%ADnautilus%E8%BE%93%E5%85%A5%E6%96%87%E5%AD%97%E5%BF%AB%E9%80%9F%E5%AE%9A%E4%BD%8D%E6%96%87%E4%BB%B6%E5%8A%9F%E8%83%BD/</url>
     <content><![CDATA[<p>在<code>16.04</code>的版本中<code>nautilus</code>文件管理器有一项快速定位文件的功能非常好用直接在文件夹中打出首字母即可快速定位到文件,但是在<code>18.04</code>以上的版本中默认就取消了这项功能使得我迁移到新版本中非常不适应今天碰巧找到了找回这个功能的办法记录一下:</p>
 <ol>
-<li><p>第一种安装第三方插件</p>
- <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo add-apt-repository ppa:lubomir-brindza/nautilus-typeahead</span><br><span class="line">sudo apt dist-upgrade</span><br><span class="line">nautilus -r</span><br></pre></td></tr></table></figure></li>
-<li><p>第二种调整配置文件</p>
-<p>2.1. 先安装<code>dconf</code></p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo apt install dconf-editor</span><br></pre></td></tr></table></figure>
-
-<p>2.2 打开<code>dconf-editor</code>找到<code>org -&gt; gnome -&gt; nautilus -&gt; preferences -&gt; enable-interactive-search </code>打钩即可</p>
-</li>
+<li>第一种安装第三方插件 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo add-apt-repository ppa:lubomir-brindza/nautilus-typeahead</span><br><span class="line">sudo apt dist-upgrade</span><br><span class="line">nautilus -r</span><br></pre></td></tr></table></figure></li>
+<li>第二种调整配置文件<br> 先安装<code>dconf</code>工具 <code>sudo apt install dconf-editor</code><br> 打开<code>dconf-editor</code>找到<code>org -&gt; gnome -&gt; nautilus -&gt; preferences -&gt; enable-interactive-search </code>打钩即可</li>
 </ol>
 ]]></content>
       <categories>
-        <category>我的Linux生活</category>
+        <category>Linux相关</category>
       </categories>
       <tags>
         <tag>Linux</tag>
